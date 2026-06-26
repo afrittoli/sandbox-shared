@@ -24,6 +24,9 @@ jobs:
   upload:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout shared repo
+        uses: actions/checkout@v4
+
       - name: Create test artifact
         run: |
           cat > test-artifact.txt <<EOF
@@ -44,28 +47,11 @@ jobs:
           echo "--- Artifact contents ---"
           cat test-artifact.txt
 
-      - name: Print OIDC token claims (debug)
-        run: |
-          echo "=== OIDC Token Claims (Debug) ==="
-          OIDC_TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com")
-          echo "--- Decoded JWT payload ---"
-          echo "$OIDC_TOKEN" | jq -r '.value' | cut -d. -f2 | base64 -d 2>/dev/null | jq .
-          echo "=== End OIDC Token Claims ==="
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ inputs.iam-role }}
-          aws-region: us-east-1
-          audience: sts.amazonaws.com
-
       - name: Upload to S3
-        run: |
-          aws s3 cp test-artifact.txt \
-            "s3://${{ inputs.bucket-name }}/${{ inputs.storage-prefix }}/test-artifact-${{ github.run_id }}.txt"
-
-      - name: Verify upload
-        run: |
-          echo "=== Listing objects under s3://${{ inputs.bucket-name }}/${{ inputs.storage-prefix }}/ ==="
-          aws s3 ls "s3://${{ inputs.bucket-name }}/${{ inputs.storage-prefix }}/"
+        uses: ./.github/actions/s3-upload-with-role
+        with:
+          iam-role: ${{ inputs.iam-role }}
+          bucket-name: ${{ inputs.bucket-name }}
+          storage-prefix: ${{ inputs.storage-prefix }}
+          file-path: test-artifact.txt
+          s3-key: test-artifact-${{ github.run_id }}.txt
