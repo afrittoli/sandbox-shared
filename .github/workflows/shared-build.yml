@@ -1,0 +1,71 @@
+name: Shared Build and Upload
+
+on:
+  workflow_call:
+    inputs:
+      iam-role:
+        description: 'ARN of the IAM role to assume via OIDC'
+        required: true
+        type: string
+      storage-prefix:
+        description: 'S3 prefix for this platform (e.g., platform1)'
+        required: true
+        type: string
+      bucket-name:
+        description: 'S3 bucket name'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create test artifact
+        run: |
+          cat > test-artifact.txt <<EOF
+          === Test Artifact ===
+          Repository: ${{ github.repository }}
+          Workflow Run ID: ${{ github.run_id }}
+          Timestamp: $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          Caller Workflow: ${{ github.workflow }}
+          Job Workflow Ref: ${{ github.job_workflow_ref }}
+          Actor: ${{ github.actor }}
+          Event: ${{ github.event_name }}
+          Ref: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          Run Attempt: ${{ github.run_attempt }}
+          Storage Prefix: ${{ inputs.storage-prefix }}
+          IAM Role: ${{ inputs.iam-role }}
+          EOF
+          echo "--- Artifact contents ---"
+          cat test-artifact.txt
+
+      - name: Print OIDC token claims (debug)
+        run: |
+          echo "=== OIDC Token Claims (Debug) ==="
+          OIDC_TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com")
+          echo "--- Decoded JWT payload ---"
+          echo "$OIDC_TOKEN" | jq -r '.value' | cut -d. -f2 | base64 -d 2>/dev/null | jq .
+          echo "=== End OIDC Token Claims ==="
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ inputs.iam-role }}
+          aws-region: us-east-1
+          audience: sts.amazonaws.com
+
+      - name: Upload to S3
+        run: |
+          aws s3 cp test-artifact.txt \
+            "s3://${{ inputs.bucket-name }}/${{ inputs.storage-prefix }}/test-artifact-${{ github.run_id }}.txt"
+
+      - name: Verify upload
+        run: |
+          echo "=== Listing objects under s3://${{ inputs.bucket-name }}/${{ inputs.storage-prefix }}/ ==="
+          aws s3 ls "s3://${{ inputs.bucket-name }}/${{ inputs.storage-prefix }}/"

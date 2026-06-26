@@ -1,0 +1,20 @@
+# Caller workflow for afrittoli/sandbox (platform1)
+# Copy this file to afrittoli/sandbox/.github/workflows/
+name: Platform Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build:
+    uses: afrittoli/sandbox-shared/.github/workflows/shared-build.yml@main
+    with:
+      iam-role: arn:aws:iam::569569263630:role/oot-build-platform1
+      storage-prefix: platform1
+      bucket-name: afrittoli-rfc0055-poc
