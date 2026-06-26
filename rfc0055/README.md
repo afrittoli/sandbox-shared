@@ -124,28 +124,26 @@ In this POC, each IAM role's trust policy includes a `StringEquals` condition
 on `job_workflow_ref` matching the shared workflow ref. Any attempt to assume
 the role from a workflow that is not the shared reusable workflow is denied.
 
-## Repository Contents
+## Provisioning a New Platform
 
+To onboard a new platform, the infra team adds an entry to the `platforms`
+variable in `terraform/variables.tf`:
+
+```hcl
+variable "platforms" {
+  default = {
+    platform1  = { repo_name = "sandbox" }
+    platform2  = { repo_name = "sandbox-2" }
+    myplatform = { repo_name = "vendor/torch-myplatform" }  # new
+  }
+}
 ```
-sandbox-shared/
-├── .github/
-│   ├── actions/
-│   │   └── s3-upload-with-role/     # Composite action: OIDC + S3 upload
-│   │       └── action.yml
-│   └── workflows/
-│       └── shared-build.yml         # Reusable workflow (workflow_call)
-├── terraform/                       # AWS infrastructure
-│   ├── main.tf                      # Provider config
-│   ├── variables.tf                 # Region, bucket name, org, workflow ref
-│   ├── oidc.tf                      # GitHub Actions OIDC provider
-│   ├── s3.tf                        # S3 bucket with public access blocked
-│   ├── roles.tf                     # IAM roles + trust/permission policies
-│   └── outputs.tf                   # Role ARNs, bucket name/ARN
-└── rfc0055/
-    ├── README.md                    # This file
-    ├── sandbox-build.yml            # Caller workflow for afrittoli/sandbox
-    └── sandbox-2-build.yml          # Caller workflow for afrittoli/sandbox-2
-```
+
+Then run `terraform apply`. This creates the IAM role (`oot-build-myplatform`)
+with trust and permission policies scoped to the new platform's repo and
+S3 prefix. No changes are needed to the shared workflow, the composite
+action, or the OIDC provider — the module handles all IAM resources
+automatically.
 
 ## Cleanup
 

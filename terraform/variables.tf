@@ -21,3 +21,14 @@ variable "shared_workflow_ref" {
   type        = string
   default     = "afrittoli/sandbox-shared/.github/workflows/shared-build.yml@refs/heads/main"
 }
+
+variable "platforms" {
+  description = "Map of platform configurations. Key is the platform name, value contains the source repo."
+  type = map(object({
+    repo_name = string
+  }))
+  default = {
+    platform1 = { repo_name = "sandbox" }
+    platform2 = { repo_name = "sandbox-2" }
+  }
+}

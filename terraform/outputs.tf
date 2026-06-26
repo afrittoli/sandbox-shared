@@ -1,11 +1,6 @@
-output "platform1_role_arn" {
-  description = "ARN of the IAM role for platform1 (afrittoli/sandbox)"
-  value       = aws_iam_role.platform1.arn
-}
-
-output "platform2_role_arn" {
-  description = "ARN of the IAM role for platform2 (afrittoli/sandbox-2)"
-  value       = aws_iam_role.platform2.arn
+output "platform_role_arns" {
+  description = "Map of platform name to IAM role ARN"
+  value       = { for k, v in module.platform_role : k => v.role_arn }
 }
 
 output "bucket_name" {
