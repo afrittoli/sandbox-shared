@@ -15,3 +15,9 @@ variable "github_org" {
   type        = string
   default     = "afrittoli"
 }
+
+variable "shared_workflow_ref" {
+  description = "The shared reusable workflow ref to enforce in IAM trust policies"
+  type        = string
+  default     = "afrittoli/sandbox-shared/.github/workflows/shared-build.yml@refs/heads/main"
+}

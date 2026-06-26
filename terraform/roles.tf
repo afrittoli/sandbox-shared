@@ -22,6 +22,12 @@ data "aws_iam_policy_document" "platform1_trust" {
       variable = "token.actions.githubusercontent.com:sub"
       values   = ["repo:${var.github_org}/sandbox:*"]
     }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:job_workflow_ref"
+      values   = [var.shared_workflow_ref]
+    }
   }
 }
 
@@ -97,6 +103,12 @@ data "aws_iam_policy_document" "platform2_trust" {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
       values   = ["repo:${var.github_org}/sandbox-2:*"]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:job_workflow_ref"
+      values   = [var.shared_workflow_ref]
     }
   }
 }
