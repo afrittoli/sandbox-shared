@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout shared repo
         uses: actions/checkout@v4
+        with:
+          repository: afrittoli/sandbox-shared
 
       - name: Create test artifact
         run: |
